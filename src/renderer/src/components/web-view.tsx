@@ -221,11 +221,20 @@ export const WebView: React.FC<WebViewProps> = ({ webTransparent, onWebTranspare
     if (!wv) return
     setCanGoBack(wv.canGoBack?.() ?? false)
     setCanGoForward(wv.canGoForward?.() ?? false)
+
+    // Keep the address bar and history in sync when a page link navigates the
+    // webview (including links redirected from target="_blank").
+    const currentUrl = wv.getURL?.() || ''
+    if (currentUrl) {
+      setUrl(currentUrl)
+      setInputUrl(currentUrl)
+    }
+
     // 页面加载完成后用真实标题更新历史
     try {
       const title = wv.getTitle?.() || ''
-      if (title && url) {
-        window.api.browsing.visit(url, title).then(refreshHistory)
+      if (title && currentUrl) {
+        window.api.browsing.visit(currentUrl, title).then(refreshHistory)
       }
     } catch {
       // ignore
