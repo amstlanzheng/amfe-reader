@@ -86,6 +86,19 @@ function createMainWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
+  // <webview> has its own guest webContents. Intercept target="_blank" and
+  // window.open() requests there so normal web links stay in the current view.
+  mainWindow.webContents.on('did-attach-webview', (_event, guestWebContents) => {
+    guestWebContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\//i.test(url)) {
+        void guestWebContents.loadURL(url)
+      } else {
+        void shell.openExternal(url)
+      }
+      return { action: 'deny' }
+    })
+  })
+
   // 记忆窗口位置/尺寸（防抖）
   let boundsTimer: NodeJS.Timeout | null = null
   const saveBounds = () => {
